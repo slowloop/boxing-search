@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.text.Text?>
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="slowloop.Controller"
+          fx:id="pane1" onMouseReleased="#deselect" >
+
+    <VBox GridPane.rowIndex="0" alignment="TOP_CENTER">
+        <Text>!!BOXER SEARCH!!</Text>
+    </VBox>
+
+    <VBox GridPane.rowIndex="2" >
+        <HBox spacing="6" fx:id="box">
+            <TextField fx:id="boxer" onKeyPressed="#handle" promptText="Enter boxer's name" minWidth="150" focusTraversable="false"/>
+            <Button fx:id="search" onAction="#searchBoxer" text="Find" minWidth="50"/>
+        </HBox>
+    </VBox>
+        <ProgressIndicator fx:id="progress1"/>
+
+</GridPane>

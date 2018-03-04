@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.TextFlow?>
+<?import javafx.geometry.Insets?>
+
+
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.text.Text?>
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="slowloop.secondController" fx:id="pane" onMouseReleased="#deselect">
+
+    <HBox GridPane.rowIndex="0" spacing="6">
+        <padding>
+            <Insets top="15.0" />
+        </padding>
+        <TextField fx:id="boxerName" onKeyPressed="#handle" promptText="Enter boxer's name" minWidth="150"
+        focusTraversable="false"/>
+        <Button fx:id="button" onAction="#buttonClicked" text="Search" minWidth="50"/>
+    </HBox>
+
+    <HBox GridPane.rowIndex="1">
+        <padding>
+            <Insets right="8.0" top="15.0" />
+        </padding>
+        <Text fx:id="text" />
+        <ImageView fx:id="flag" fitWidth="55" fitHeight="30" translateX="10"/>
+    </HBox>
+
+    <HBox  fx:id="bioText" GridPane.rowIndex="2">
+        <padding>
+            <Insets top="15.0" bottom="15.0"/>
+        </padding>
+        <StackPane>
+            <VBox>
+                <Text fx:id="biography" wrappingWidth="280"/>
+            </VBox>
+
+        </StackPane>
+    </HBox>
+
+    <StackPane GridPane.rowIndex="2">
+        <ProgressIndicator fx:id="progress" style="-fx-pref-width:2"/>
+    </StackPane>
+
+    <HBox GridPane.rowIndex="3">
+        <padding>
+            <Insets bottom="15.0"/>
+        </padding>
+        <VBox style="-fx-alignment: center; -fx-border-color: black">
+            <StackPane style="-fx-background-color: black; -fx-pref-width: 92">
+                <Text text="Wins" style="-fx-fill: white;" />
+            </StackPane>
+            <Text fx:id="wins" />
+        </VBox>
+        <VBox style="-fx-alignment: center; -fx-border-style: solid; -fx-border-width:1 0 1 0; -fx-border-color: black">
+            <StackPane style="-fx-background-color: black; -fx-pref-width: 92">
+                <Text text="Losses" style="-fx-fill: white;" />
+            </StackPane>
+            <Text fx:id="losses" />
+        </VBox>
+        <VBox style="-fx-alignment: center; -fx-border-style: solid; -fx-border-color: black">
+            <StackPane style="-fx-background-color: black; -fx-pref-width: 92">
+                <Text text="Draws" style="-fx-fill: white;" />
+            </StackPane>
+            <Text fx:id="draws"/>
+        </VBox>
+    </HBox>
+
+    <HBox GridPane.rowIndex="4">
+        <padding>
+            <Insets bottom="15.0"/>
+        </padding>
+
+        <VBox style="-fx-border-style: solid; -fx-border-width:1; -fx-border-color: black; -fx-pref-width: 280">
+            <StackPane style="-fx-background-color: black;">
+
+                <Text text="Next Fight" style="-fx-fill: white;" />
+            </StackPane>
+            <HBox style="-fx-alignment: center">
+                <Text fx:id="nextFight"/>
+            </HBox>
+            <StackPane>
+                <HBox style="-fx-alignment: center">
+                    <Text fx:id="opponent"/>
+                    <Hyperlink fx:id="enemy" onMousePressed="#opponentStats" />
+                </HBox>
+            </StackPane>
+
+        </VBox>
+
+    </HBox>
+
+    <HBox GridPane.rowIndex="5">
+        <VBox style="-fx-border-style: solid; -fx-border-width:1; -fx-border-color: black; -fx-pref-width: 280">
+            <StackPane style="-fx-background-color: black;">
+                <Text text="News" style="-fx-fill: white;" />
+            </StackPane>
+            <TextFlow fx:id="nextNews" />
+        </VBox>
+    </HBox>
+
+</GridPane>
+
+
+
+
+
