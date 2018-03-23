@@ -67,7 +67,7 @@ public class Interface extends Application{
     }
 
     //Grab an image url of the boxer's country's flag (from countries-ofthe-world.com or Wikipedia) and set the ImageView object using the grabbed image URL.
-    public void nation(String nation, ImageView image, Backend name) throws IOException{
+    public void nation(String nation, ImageView image, Backend name){
 
         country = name.nationality.replace(" ", "-").replaceAll("\\[[0-9]+\\]", "");
         flag = image;
@@ -98,51 +98,61 @@ public class Interface extends Application{
         otherCountries.put("Scotland", "United-Kingdom");
         otherCountries.put("Côte-D’Ivoire", "Cote-d-Ivoire");
 
-        Document document = Jsoup.connect("https://www.countries-ofthe-world.com/flags-of-the-world.html").get();
-        Elements countries = document.select("tr");
+        try{
+            Document document = Jsoup.connect("https://www.countries-ofthe-world.com/flags-of-the-world.html")
+                    .userAgent("Mozilla")
+                    .referrer("http://www.google.com").get();
 
-        if(!(countries.text().contains(country.replace("-"," "))) && otherCountries.containsKey(country) == false){
+            Elements countries = document.select("tr");
 
-            Document document1 = Jsoup.connect("https://en.wikipedia.org/wiki/Gallery_of_flags_of_dependent_territories").get();
-            Elements territories = document1.select("[src]");
+            if(!(countries.text().contains(country.replace("-"," "))) && otherCountries.containsKey(country) == false){
 
-            boolean found = false;
+                Document document1 = Jsoup.connect("https://en.wikipedia.org/wiki/Gallery_of_flags_of_dependent_territories")
+                        .userAgent("Mozilla")
+                        .referrer("http://www.google.com").get();
 
-            for(Element territory : territories){
-                String territoryName = territory.attr("alt").replace("Flag of ", "");
+                Elements territories = document1.select("[src]");
 
-                if(territoryName.length() > 0){
-                    if(name.nationality.contains(territoryName.substring(0,1).replace(" ", "")+ territoryName.substring(1))){
-                        flagURL = territory.attr("abs:src").toString();
-                        flag.setImage(new Image(flagURL));
-                        found = true;
+                boolean found = false;
+
+                for(Element territory : territories){
+                    String territoryName = territory.attr("alt").replace("Flag of ", "");
+
+                    if(territoryName.length() > 0){
+                        if(name.nationality.contains(territoryName.substring(0,1).replace(" ", "")+ territoryName.substring(1))){
+                            flagURL = territory.attr("abs:src").toString();
+                            flag.setImage(new Image(flagURL));
+                            found = true;
+                        }
                     }
                 }
-            }
-            //Boxer's flag is left blank if an image url can't be found.
-            if(found == false){
-                flag.setImage(new Image("http://"));
+                //Boxer's flag is left blank if an image url can't be found.
+                if(found == false){
+                    flag.setImage(new Image("http://"));
+                }
+
+            }else{
+                if(otherCountries.containsKey(country)){
+                    flagURL = "https://www.countries-ofthe-world.com/flags-normal/flag-of-" + otherCountries.get(country) + ".png";
+                    flag.setImage(new Image(flagURL));
+                }
+                else{
+                    flagURL = "https://www.countries-ofthe-world.com/flags-normal/flag-of-" + country + ".png";
+                    flag.setImage(new Image(flagURL));
+                }
             }
 
-        }else{
+            //Set the Tooltip to show the correct name of the country.
             if(otherCountries.containsKey(country)){
-                flagURL = "https://www.countries-ofthe-world.com/flags-normal/flag-of-" + otherCountries.get(country) + ".png";
-                flag.setImage(new Image(flagURL));
+                Tooltip t = new Tooltip(otherCountries.get(country).replace("-", " "));
+                Tooltip.install(flag, t);
             }
             else{
-                flagURL = "https://www.countries-ofthe-world.com/flags-normal/flag-of-" + country + ".png";
-                flag.setImage(new Image(flagURL));
+                Tooltip t = new Tooltip(boxerNation);
+                Tooltip.install(flag, t);
             }
         }
-
-        //Set the Tooltip to show the correct name of the country.
-        if(otherCountries.containsKey(country)){
-            Tooltip t = new Tooltip(otherCountries.get(country).replace("-", " "));
-            Tooltip.install(flag, t);
-        }
-        else{
-            Tooltip t = new Tooltip(boxerNation);
-            Tooltip.install(flag, t);
+        catch(Exception e){
         }
     }
 
