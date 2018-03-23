@@ -33,14 +33,12 @@ public class Backend {
         completeName = new StringBuilder();
 
         try{
-            //Properly capitalize surnames that start with De (examples: DeMarco, DeSantos, DeAngelo).
-            if(Character.toString(boxerFullName.charAt(boxerFullName.indexOf("_")+1)).equalsIgnoreCase("d")
-                    && Character.toString(boxerFullName.charAt(boxerFullName.indexOf("_")+2)).equalsIgnoreCase("e")
+            //Properly capitalize surnames that start with De (examples: DeMarco, DeSantos, DeAngelo) or Mc (example: McDonnell).
+            if(boxerFullName.substring(boxerFullName.indexOf("_")+1, boxerFullName.indexOf("_")+3).equalsIgnoreCase("de")
                     && !(Character.toString(boxerFullName.charAt(boxerFullName.indexOf("_")+3)).equalsIgnoreCase("_"))
                     && !(Character.toString(boxerFullName.charAt(boxerFullName.indexOf("_")+3)).equalsIgnoreCase("l"))
                     && !(Character.toString(boxerFullName.charAt(boxerFullName.indexOf("_")+5)).equalsIgnoreCase("_"))
-                    || Character.toString(boxerFullName.charAt(boxerFullName.indexOf("_")+1)).equalsIgnoreCase("m")
-                    && Character.toString(boxerFullName.charAt(boxerFullName.indexOf("_")+2)).equalsIgnoreCase("c")
+                    || boxerFullName.substring(boxerFullName.indexOf("_")+1, boxerFullName.indexOf("_")+3).equalsIgnoreCase("mc")
                     && !(Character.toString(boxerFullName.charAt(boxerFullName.indexOf("_")+3)).equalsIgnoreCase("_"))) {
 
                 int count = 0;
@@ -121,16 +119,21 @@ public class Backend {
             }
 
         }catch(Exception e){
-
             //Get boxer's name from Boxrec page if unable to get it from Wikipedia.
-            Element boxerName = document1.select("p").first();
+            Element paragraph = document1.select("p").first();
+            String shortenParagraph ="";
 
-            for(char letter : completeName.toString().replace("_", " ").toCharArray()){
+            if(!(paragraph.text().contains("Name:"))){
 
-                if(boxerName.text().contains(Character.toString(letter))){
-                    boxer += letter;
-                }
+               shortenParagraph = document1.getElementById("mw-content-text").text()
+                        .substring(document1.getElementById("mw-content-text").text().indexOf(" ")+1, document1.getElementById("mw-content-text").text().length());
             }
+            else{
+                shortenParagraph = paragraph.text().substring(paragraph.text().indexOf(" ")+1, paragraph.text().length());
+            }
+            String name = shortenParagraph.substring(0, shortenParagraph.indexOf(":"));
+
+            boxer = name.substring(0, name.lastIndexOf(" "));
         }
     }
 
@@ -171,11 +174,20 @@ public class Backend {
         try {
             //Get boxer's country of birth from Boxrec.
             String birthplace;
-            Element country = document1.select("p").first();
+            String country;
+            Element paragraph = document1.select("p").first();
 
-            if (country.text().contains("Birthplace")) {
+            if(!(paragraph.text().contains("Name:"))){
 
-                String birth = country.text().substring(country.text().indexOf("Birthplace:") + 12);
+                country = document1.getElementById("mw-content-text").text();
+            }
+            else{
+                country = paragraph.text();
+            }
+
+            if (country.contains("Birthplace")) {
+
+                String birth = country.substring(country.indexOf("Birthplace:") + 12);
                 birthplace = birth.substring(0, birth.indexOf(":"));
 
                 if(birthplace.contains(") ")){
@@ -190,9 +202,9 @@ public class Backend {
                     nationality = birthplace.substring(0, birthplace.lastIndexOf(" "));
                 }
             }
-            else if(country.text().contains("Hometown")){
+            else if(country.contains("Hometown")){
 
-                String birth = country.text().substring(country.text().indexOf("Hometown:") + 10);
+                String birth = country.substring(country.indexOf("Hometown:") + 10);
                 birthplace = birth.substring(0, birth.indexOf(":"));
 
                 if(birthplace.contains(") ")){
@@ -699,21 +711,29 @@ public class Backend {
         try{
             if(name.endsWith(".")){
                 try{
-                    document1 = Jsoup.connect("http://boxrec.com/media/index.php/" + URLEncoder.encode(boxerNameCapitalized(name.substring(0, name.length() - 1)), "UTF8")).get();
+                    document1 = Jsoup.connect("http://boxrec.com/media/index.php/" + URLEncoder.encode(boxerNameCapitalized(name.substring(0, name.length() - 1)), "UTF8"))
+                            .userAgent("Mozilla")
+                            .referrer("http://www.google.com").get();
                 }
                 catch(Exception a){
-                    document1 = Jsoup.connect("http://boxrec.com/media/index.php/" + URLEncoder.encode(boxerNameCapitalized(name), "UTF8")).get();
+                    document1 = Jsoup.connect("http://boxrec.com/media/index.php/" + URLEncoder.encode(boxerNameCapitalized(name), "UTF8"))
+                            .userAgent("Mozilla")
+                            .referrer("http://www.google.com").get();
                 }
             }
             else{
-                document1 = Jsoup.connect("http://boxrec.com/media/index.php/" + URLEncoder.encode(boxerNameCapitalized(name), "UTF8")).get();
+                document1 = Jsoup.connect("http://boxrec.com/media/index.php/" + URLEncoder.encode(boxerNameCapitalized(name), "UTF8"))
+                        .userAgent("Mozilla")
+                        .referrer("http://www.google.com").get();
             }
 
             Elements url = document1.select("a[href]");
 
             for(Element line : url){
                 if(line.outerHtml().contains("http://boxrec.com/en/boxer/")){
-                    document = Jsoup.connect(line.attr("abs:href")).get();
+                    document = Jsoup.connect(line.attr("abs:href"))
+                            .userAgent("Mozilla")
+                            .referrer("http://www.google.com").get();
                 }
             }
         }
@@ -726,7 +746,9 @@ public class Backend {
                     String boxer = boxerNameCapitalized(name).substring(0, boxerNameCapitalized(name).lastIndexOf("_") + 3) +
                             boxerNameCapitalized(name).substring(boxerNameCapitalized(name).lastIndexOf("_") + 3, boxerNameCapitalized(name).length()).toLowerCase();
 
-                    documentWiki = Jsoup.connect("http://boxrec.com/media/index.php/" + URLEncoder.encode(boxer, "UTF8")).get();
+                    documentWiki = Jsoup.connect("http://boxrec.com/media/index.php/" + URLEncoder.encode(boxer, "UTF8"))
+                            .userAgent("Mozilla")
+                            .referrer("http://www.google.com").get();
                 }
             }catch(Exception a){
             }
@@ -734,11 +756,15 @@ public class Backend {
 
         //Connect to Wikipedia page.
         try{
-            documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxerNameCapitalized(name), "UTF8")).get();
+            documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxerNameCapitalized(name), "UTF8"))
+                    .userAgent("Mozilla")
+                    .referrer("http://www.google.com").get();
 
             if(documentWiki.text().contains("may refer to:") || documentWiki.text().contains("is the name of:") || !((documentWiki.select("p").text()).contains("boxer"))){
 
-                documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxerNameCapitalized(name), "UTF8") + "_(boxer)").get();
+                documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxerNameCapitalized(name), "UTF8") + "_(boxer)")
+                        .userAgent("Mozilla")
+                        .referrer("http://www.google.com").get();
             }
         }
         catch(Exception e){
@@ -746,11 +772,15 @@ public class Backend {
             try{
                 if(boxerNameCapitalized(name).contains("Jr") && !(boxerNameCapitalized(name).endsWith("."))){
 
-                    documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxerNameCapitalized(name) + ".", "UTF8")).get();
+                    documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxerNameCapitalized(name) + ".", "UTF8"))
+                            .userAgent("Mozilla")
+                            .referrer("http://www.google.com").get();
 
                     if(documentWiki.text().contains("may refer to:") || documentWiki.text().contains("is the name of:") || !((documentWiki.select("p").text()).contains("boxer"))){
 
-                        documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxerNameCapitalized(name) + ".", "UTF8") + "_(boxer)").get();
+                        documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxerNameCapitalized(name) + ".", "UTF8") + "_(boxer)")
+                                .userAgent("Mozilla")
+                                .referrer("http://www.google.com").get();
                     }
                 }
                 else if(boxerNameCapitalized(name).substring(boxerNameCapitalized(name).lastIndexOf("_")+1, boxerNameCapitalized(name).lastIndexOf("_")+3).equals("De")
@@ -760,11 +790,15 @@ public class Backend {
                     String boxer = boxerNameCapitalized(name).substring(0, boxerNameCapitalized(name).lastIndexOf("_")+3) +
                             boxerNameCapitalized(name).substring(boxerNameCapitalized(name).lastIndexOf("_")+3, boxerNameCapitalized(name).length()).toLowerCase();
 
-                    documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxer, "UTF8")).get();
+                    documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxer, "UTF8"))
+                            .userAgent("Mozilla")
+                            .referrer("http://www.google.com").get();
 
                     if(documentWiki.text().contains("may refer to:") || documentWiki.text().contains("is the name of:") || !((documentWiki.select("p").text()).contains("boxer"))){
 
-                        documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxer, "UTF8") + "_(boxer)").get();
+                        documentWiki = Jsoup.connect("https://en.wikipedia.org/wiki/" + URLEncoder.encode(boxer, "UTF8") + "_(boxer)")
+                                .userAgent("Mozilla")
+                                .referrer("http://www.google.com").get();
                     }
                 }
                 else{
@@ -790,7 +824,10 @@ public class Backend {
         name = bName.replace("_", "+");
 
         try{
-            Document document1 = Jsoup.connect("https://www.badlefthook.com/search?order=date&q=" +  name + "&type=Article").get();
+            Document document1 = Jsoup.connect("https://www.badlefthook.com/search?order=date&q=" +  name + "&type=Article")
+                    .userAgent("Mozilla")
+                    .referrer("http://www.google.com").get();
+
             Elements articles = document1.select("h2[class=c-entry-box--compact__title]").select("a");
 
             for(Element element : articles){
