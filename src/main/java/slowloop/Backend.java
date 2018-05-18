@@ -18,7 +18,7 @@ public class Backend {
     public HashMap<String,String> news = new HashMap<String, String>();
     public String wins;
     public String losses, draws;
-    public Document document, document1, documentWiki;
+    public Document document1, documentWiki;
     public String opponent;
     public String name, boxer, nationality, bio, fight;
     public StringBuilder completeName;
@@ -269,59 +269,65 @@ public class Backend {
                 }
 
                 found = false;
+                int counter = 0;
+                String biography2 = biography;
 
                 //Remove any round brackets with a few words inside of them. Ignore round brackets with single (capitalized) words like (Super) or (Unified).
                 for(char bracket : biography.toCharArray()){
 
                     if(Character.toString(bracket).equalsIgnoreCase("(")
-                            && (Character.toString(biography.charAt(biography.indexOf(bracket)+1)).matches("[[\\p{L}&&[^\\p{Lu}]]]"))){
+                            && ((Character.toString(biography2.charAt(biography2.indexOf(bracket)+1)).matches("[[\\p{L}&&[^\\p{Lu}]]]"))
+                            || (Character.toString(biography2.charAt(biography2.indexOf(bracket)+1)).matches("[\\p{Punct}]"))
+                            || (Character.toString(biography2.charAt(biography2.indexOf(bracket)+1)).matches("[\\p{Digit}]")))){
 
-                        position = biography.indexOf(bracket);
+                        position = biography2.indexOf(bracket);
                         found = true;
                     }
                     if(Character.toString(bracket).equalsIgnoreCase("(")
-                            && (Character.toString(biography.charAt(biography.indexOf(bracket)+1)).matches("\\p{Lu}"))){
+                            && (Character.toString(biography2.charAt(biography2.indexOf(bracket)+1)).matches("\\p{Lu}"))){
 
                         foundSuper = true;
                     }
-                    if(found == true && Character.toString(bracket).equalsIgnoreCase(")")
-                            || found == false && foundSuper == false && Character.toString(bracket).equalsIgnoreCase(")")){
+                    if((found == true && Character.toString(bracket).equalsIgnoreCase(")") ||
+                            found == false && foundSuper == false && Character.toString(bracket).equalsIgnoreCase(")"))
+                            && biography2.indexOf(bracket) == (counter - (biography.length() - biography2.length()))){
 
                         //Fix a specific case where the paragraph has a closing bracket but not an opening one (and the opening bracket should have been located before
                         //a certain word).
-                        if(found == false && foundSuper == false && biography.substring(0, biography.indexOf(")")).contains("born")){
+                        if(found == false && foundSuper == false && biography2.substring(0, biography2.indexOf(")")).contains("born")){
 
                             String first;
                             String last;
 
-                            if((biography.substring(biography.indexOf("born")-2, biography.indexOf("born")-1).equals(","))){
+                            if((biography2.substring(biography2.indexOf("born")-2, biography2.indexOf("born")-1).equals(","))){
 
-                                first = biography.substring(0, biography.indexOf("born")-2);
+                                first = biography2.substring(0, biography2.indexOf("born")-2);
                             }
                             else{
-                                first = biography.substring(0, biography.indexOf("born")-1);
+                                first = biography2.substring(0, biography2.indexOf("born")-1);
                             }
-                            if((biography.substring(biography.indexOf(")")+1, biography.indexOf(")")+2)).equals(",")){
+                            if((biography2.substring(biography2.indexOf(")")+1, biography2.indexOf(")")+2)).equals(",")){
 
-                                last = biography.substring(biography.indexOf(")")+3, biography.length());
+                                last = biography2.substring(biography2.indexOf(")")+3, biography2.length());
                             }
                             else{
-                                last = biography.substring(biography.indexOf(")")+2, biography.length());
+                                last = biography2.substring(biography2.indexOf(")")+2, biography2.length());
                             }
 
-                            biography = first + " " + last;
+                            biography2 = first + " " + last;
                         }
                         else if(found == false && foundSuper == false && !(biography.substring(0, biography.indexOf(")")).contains("born"))){
 
-                            biography = biography.substring(0, biography.indexOf(bracket)) + biography.substring(biography.indexOf(bracket)+1, biography.length());
+                            biography2 = biography2.substring(0, biography2.indexOf(bracket)) + biography2.substring(biography2.indexOf(bracket)+1, biography2.length());
                         }
                         else{
-                            if(Character.toString(biography.charAt(biography.indexOf(bracket) + 1)).equalsIgnoreCase(",")){
+                            if(Character.toString(biography2.charAt(biography2.indexOf(bracket) + 1)).equalsIgnoreCase(",")){
 
-                                biography = biography.substring(0, position - 1) +  biography.substring(biography.indexOf(bracket) + 1, biography.length());
+                                biography2 = biography2.substring(0, position - 1) +  biography2.substring(biography2.indexOf(bracket) + 1, biography2.length());
                             }
                             else{
-                                biography = biography.substring(0, position) + biography.substring(biography.indexOf(bracket) + 2, biography.length());
+
+                                biography2 = biography2.substring(0, position) + biography2.substring(biography2.indexOf(bracket) + 2, biography2.length());
                             }
                         }
 
@@ -330,7 +336,11 @@ public class Backend {
                     if(Character.toString(bracket).equalsIgnoreCase(")") && foundSuper == true){
                         foundSuper = false;
                     }
+
+                    counter++;
                 }
+
+                biography = biography2.replace("  ", " ");
 
                 //Remove reference links (square brackets with a number in them) from the paragraph.
                 biography = biography.replaceAll("\\[[0-9]+\\]", "");
@@ -463,7 +473,7 @@ public class Backend {
         }
     }
 
-    //Grabs the boxer's fight record and next scheduled fight from either Boxrec or Wikipedia.
+    //Grabs the boxer's fight record and next scheduled fight from Wikipedia.
     public void fightRecordAndSchedule(){
         this.wins = "";
         this.losses = "";
@@ -471,139 +481,121 @@ public class Backend {
         this.opponent = "";
         this.fight = "";
 
-        try{
-            //Get boxer's wins, losses, and draws from Boxrec.
-            Elements wins = document.select("td[class=bgW]");
-            Element ko = document.select("th[class=textWon]").first();
-            Elements losses = document.select("td[class=bgL]");
-            Elements draws = document.select("td[class=bgD]");
+        //Get boxer's wins, losses, and draws from Wikipedia.
+        if(wikiConnected == false){
 
-            this.wins = wins.text() + " " + "(" + ko.text() + ")";
-            this.losses = losses.text();
-            this.draws = draws.text();
+            //If there is no Wikipedia page for the boxer then leave the fighter's record n/a
+            fight = "Date: n/a";
+            opponent = "n/a";
+            wins = "n/a";
+            losses = "n/a";
+            draws = "n/a";
 
-            //Get boxer's next fight from Boxrec.
-            if(document.select("table[border]").select("td[valign=center]").select("div.boutResult").first().text().equalsIgnoreCase("s")){
+        }else{
+            try{
+                Element wiki = documentWiki.select("table.infobox").first();
 
-                Element date = document.select("table").select("a[href*=/en/date?date=]").first();
-                fight = "Date: " + date.text();
-
-                if(!(document.select("table").select("td[valign=center]").select("td:contains(TBA)").text().equalsIgnoreCase("TBA"))){
-                    Element opponentBoxer = document.select("table").select("td[valign=center]").select("a[href*=/en/boxer/]").first();
-                    opponent = opponentBoxer.text();
-
-                }else{ opponent = "TBA"; }
-
-            }else{ fight = "No scheduled fight."; }
-
-        }catch(Exception e){
-            //Get boxer's wins, losses, and draws from Wikipedia in case Boxrec website is unavailable.
-            if(wikiConnected == false){
-
-                //If there is no Wikipedia page for the boxer then leave the fighter's record n/a
                 fight = "Date: n/a";
                 opponent = "n/a";
-                wins = "n/a";
-                losses = "n/a";
-                draws = "n/a";
 
-            }else{
-                try{
-                    Element wiki = documentWiki.select("table.infobox").first();
+                if(!(wiki.text().contains("Total"))) {
 
-                    fight = "Date: n/a";
-                    opponent = "n/a";
-
-                    if(!(wiki.text().contains("Total"))) {
-
-                        wins = "n/a";
-                        losses = "n/a";
-                        draws = "n/a";
-                    }
-                    else{
-                        String record;
-
-                        if(wiki.text().contains("Total Fights")){
-                            record = wiki.text().substring(wiki.text().indexOf("Total fights")+13);
-                        }else{
-                            record = wiki.text().substring(wiki.text().indexOf("Total")+8);
-                        }
-
-                        if(record.contains("Draws")){
-                            String boxerWins = record.substring(record.indexOf("Wins") + 5, record.length());
-                            String boxerDraws = record.substring(record.indexOf("Draws") + 6, record.length());
-
-                            if(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 3).equalsIgnoreCase("By")){
-
-                                wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") +
-                                        " (" + boxerWins.substring(boxerWins.indexOf("By knockout") + 11, boxerWins.indexOf("Losses")).replace(" ", "") +" KOs)";
-
-                            }else if(record.contains("Wins by KO")){
-
-                                wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") +
-                                        " (" + boxerWins.substring(boxerWins.indexOf("Wins by KO") + 11, boxerWins.indexOf("Losses")).replace(" ", "") +" KOs)";
-                            }
-                            else if(!(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 3).equalsIgnoreCase("By"))
-                                    || !(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 5).equalsIgnoreCase("Wins"))){
-
-                                wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") + " (0 KOs)";
-                            }
-
-                            losses = boxerWins.substring(boxerWins.indexOf("Losses") + 6, boxerWins.indexOf("Draws")).replace(" ", "");
-
-                            if(boxerDraws.length() < 3){
-                                draws = boxerDraws;
-                            }
-                            else{
-                                draws = boxerDraws.substring(0, boxerDraws.indexOf(" ")).replace(" ", "");
-                            }
-                        }
-                        else{
-                            String boxerWins = record.substring(record.indexOf("Wins") + 5, record.length());
-                            String boxerLosses = record.substring(record.indexOf("Losses") + 7, record.length());
-
-                            if(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 3).equalsIgnoreCase("By")){
-
-                               wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") +
-                                            " (" + boxerWins.substring(boxerWins.indexOf("By knockout") + 11, boxerWins.indexOf("Losses")).replace(" ", "") +" KOs)";
-
-                            }else if(record.contains("Wins by KO")){
-
-                                wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") +
-                                        " (" + boxerWins.substring(boxerWins.indexOf("Wins by KO") + 11, boxerWins.indexOf("Losses")).replace(" ", "") +" KOs)";
-                            }
-                            else if(!(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 3).equalsIgnoreCase("By"))
-                                    || !(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 5).equalsIgnoreCase("Wins"))){
-
-                                wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") + " (0 KOs)";
-                            }
-
-                            draws = "0";
-
-                            if(boxerLosses.length() < 3){
-                                losses = boxerLosses;
-                            }
-                            else{
-                                losses = boxerLosses.substring(0, boxerLosses.indexOf(" ")).replace(" ", "");
-                            }
-                        }
-                    }
-                }catch(Exception a){
-                    //If the boxer's wiki page has no info box (to display fight record) then wins, losses and draws return "n/a".
                     wins = "n/a";
                     losses = "n/a";
                     draws = "n/a";
                 }
+                else{
+                    String record;
 
-                //Get the fighter's next opponent and fight date from Wikipedia (If available).
-                try{
-                    Elements wiki = documentWiki.select("table.wikitable").select("td");
-                    Elements wiki1 = documentWiki.select("table.wikitable").select("tbody").select("tr");
+                    if(wiki.text().contains("Total Fights")){
+                        record = wiki.text().substring(wiki.text().indexOf("Total fights")+13);
+                    }else{
+                        record = wiki.text().substring(wiki.text().indexOf("Total")+8);
+                    }
 
-                    int count = 0;
-                    boolean stop = false, stopAgain = false, foundOpponent = false;
+                    if(record.contains("Draws")){
+                        String boxerWins = record.substring(record.indexOf("Wins") + 5, record.length());
+                        String boxerDraws = record.substring(record.indexOf("Draws") + 6, record.length());
 
-                    if(!(wiki.text().contains("N/A"))){
+                        if(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 3).equalsIgnoreCase("By")){
+
+                            wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") +
+                                    " (" + boxerWins.substring(boxerWins.indexOf("By knockout") + 11, boxerWins.indexOf("Losses")).replace(" ", "") +" KOs)";
+
+                        }else if(record.contains("Wins by KO")){
+
+                            wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") +
+                                        " (" + boxerWins.substring(boxerWins.indexOf("Wins by KO") + 11, boxerWins.indexOf("Losses")).replace(" ", "") +" KOs)";
+                        }
+                        else if(!(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 3).equalsIgnoreCase("By"))
+                                || !(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 5).equalsIgnoreCase("Wins"))){
+
+                            wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") + " (0 KOs)";
+                        }
+
+                        losses = boxerWins.substring(boxerWins.indexOf("Losses") + 6, boxerWins.indexOf("Draws")).replace(" ", "");
+
+                        if(boxerDraws.length() < 3){
+                            draws = boxerDraws;
+                        }
+                        else{
+                            draws = boxerDraws.substring(0, boxerDraws.indexOf(" ")).replace(" ", "");
+                        }
+                    }
+                    else{
+                        String boxerWins = record.substring(record.indexOf("Wins") + 5, record.length());
+                        String boxerLosses = record.substring(record.indexOf("Losses") + 7, record.length());
+
+                        if(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 3).equalsIgnoreCase("By")){
+
+                            wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") +
+                                            " (" + boxerWins.substring(boxerWins.indexOf("By knockout") + 11, boxerWins.indexOf("Losses")).replace(" ", "") +" KOs)";
+
+                        }else if(record.contains("Wins by KO")){
+
+                            wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") +
+                                        " (" + boxerWins.substring(boxerWins.indexOf("Wins by KO") + 11, boxerWins.indexOf("Losses")).replace(" ", "") +" KOs)";
+                        }
+                        else if(!(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 3).equalsIgnoreCase("By"))
+                                || !(boxerWins.substring(boxerWins.indexOf(" ")+1, boxerWins.indexOf(" ") + 5).equalsIgnoreCase("Wins"))){
+
+                            wins = boxerWins.substring(0, boxerWins.indexOf(" ")).replace(" ", "") + " (0 KOs)";
+                        }
+
+                        draws = "0";
+
+                        if(boxerLosses.length() < 3){
+                            losses = boxerLosses;
+                        }
+                        else{
+                            losses = boxerLosses.substring(0, boxerLosses.indexOf(" ")).replace(" ", "");
+                        }
+                    }
+                }
+            }catch(Exception a){
+                //If the boxer's wiki page has no info box (to display fight record) then wins, losses and draws return "n/a".
+                wins = "n/a";
+                losses = "n/a";
+                draws = "n/a";
+            }
+
+            //Get the fighter's next opponent and fight date from Wikipedia (If available).
+            try{
+                Elements wiki = documentWiki.select("table.wikitable").select("td");
+                Elements wiki1 = documentWiki.select("table.wikitable").select("tbody").select("tr");
+
+                int count = 0, countAgain = 0;
+                boolean stop = false, stopAgain = false, scheduledFight = false;
+
+                for(Element element : wiki){
+
+                    if(element.text().matches("-") && countAgain < 17){
+                        scheduledFight = true;
+                    }
+                        countAgain++;
+                    }
+
+                    if(!(wiki.text().contains("N/A")) && scheduledFight == false){
 
                         if(!(wiki1.text().contains("Opponent"))){
 
@@ -615,17 +607,30 @@ public class Backend {
                         }
                     }
                     else{
+
                         for(Element element : wiki){
                             count++;
 
-                            if(element.text().contains("N/A") && stop == false && count < 17){
+                            if((element.text().contains("N/A") || element.text().matches("-")) && stop == false && count <= 17){
 
-                                opponent = wiki.get(count).text();
-                                stop = true;
+                                if(element.text().equals("-")){
+
+                                    if(wiki.text().toString().contains("-")){
+                                        opponent = wiki.get(count+1).text();
+                                        stop = true;
+                                    }else{
+                                        opponent = wiki.get(count).text();
+                                        stop = true;
+                                    }
+                                }
+                                else{
+                                    opponent = wiki.get(count).text();
+                                    stop = true;
+                                }
 
                             }
                             //If no opponent/upcoming fight scheduled despite "N/A" being found.
-                            else if(element.text().contains("N/A") && stop == false && count > 17){
+                            else if((element.text().contains("N/A") || element.text().matches("-")) && stop == false && count > 17){
 
                                 fight = "No scheduled fight.";
                             }
@@ -696,10 +701,9 @@ public class Backend {
                         }
                     }
                 }
-                catch(Exception a){
-                    fight = "Date: n/a";
-                    opponent = "n/a";
-                }
+            catch(Exception a){
+                fight = "Date: n/a";
+                opponent = "n/a";
             }
         }
     }
@@ -726,18 +730,9 @@ public class Backend {
                         .userAgent("Mozilla")
                         .referrer("http://www.google.com").get();
             }
-
-            Elements url = document1.select("a[href]");
-
-            for(Element line : url){
-                if(line.outerHtml().contains("http://boxrec.com/en/boxer/")){
-                    document = Jsoup.connect(line.attr("abs:href"))
-                            .userAgent("Mozilla")
-                            .referrer("http://www.google.com").get();
-                }
-            }
         }
         catch(Exception e){
+
             try{
                 if(boxerNameCapitalized(name).substring(boxerNameCapitalized(name).lastIndexOf("_")+1, boxerNameCapitalized(name).lastIndexOf("_")+3).equals("De")
                         && boxerNameCapitalized(name).substring(boxerNameCapitalized(name).lastIndexOf("_")+3, boxerNameCapitalized(name)
