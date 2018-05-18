@@ -62,16 +62,27 @@ public class Interface extends Application{
     //Set Text object with the boxer's name.
     public void boxer (Text text, Backend backend) throws IOException{
 
-        text.setText(backend.boxer);
-        text.setFont(Font.font("Helvetica", FontWeight.BOLD, 18));
+        if(backend.boxer.length() > 22){
+            text.setText(backend.boxer);
+            text.setFont(Font.font("Helvetica", FontWeight.BOLD, 14));
+        }
+        else{
+            text.setText(backend.boxer);
+            text.setFont(Font.font("Helvetica", FontWeight.BOLD, 18));
+        }
     }
 
-    //Grab an image url of the boxer's country's flag (from countries-ofthe-world.com or Wikipedia) and set the ImageView object using the grabbed image URL.
+    //Grab an image url of the boxer's country's flag (from www.sciencekids.co.nz or Wikipedia) and set the ImageView object using the grabbed image URL.
     public void nation(String nation, ImageView image, Backend name){
 
-        country = name.nationality.replace(" ", "-").replaceAll("\\[[0-9]+\\]", "");
+        country = name.nationality.replace(" ", "_").replaceAll("\\[[0-9]+\\]", "");
         flag = image;
         boxerNation = nation;
+
+        if(country.contains("Boxing")){
+
+            country = country.substring(0, country.lastIndexOf("_"));
+        }
 
         HashMap<String, String> otherCountries = new HashMap<String, String>();
 
@@ -90,22 +101,20 @@ public class Interface extends Application{
         otherCountries.put("Turkmen", "Turkmenistan");
         otherCountries.put("Turkestan", "Turkmenistan");
         otherCountries.put("Georgian", "Georgia");
-        otherCountries.put("USA", "United-States-of-America");
-        otherCountries.put("U.S.", "United-States-of-America");
-        otherCountries.put("England", "United-Kingdom");
-        otherCountries.put("Wales", "United-Kingdom");
+        otherCountries.put("USA", "United_States");
+        otherCountries.put("U.S.", "United_States");
         otherCountries.put("Northern-Ireland", "Ireland");
-        otherCountries.put("Scotland", "United-Kingdom");
         otherCountries.put("Côte-D’Ivoire", "Cote-d-Ivoire");
 
         try{
-            Document document = Jsoup.connect("https://www.countries-ofthe-world.com/flags-of-the-world.html")
+
+            Document document = Jsoup.connect("http://www.sciencekids.co.nz/pictures/flags.html")
                     .userAgent("Mozilla")
                     .referrer("http://www.google.com").get();
 
             Elements countries = document.select("tr");
 
-            if(!(countries.text().contains(country.replace("-"," "))) && otherCountries.containsKey(country) == false){
+            if(!(countries.text().contains(country.replace("_"," "))) && otherCountries.containsKey(country) == false){
 
                 Document document1 = Jsoup.connect("https://en.wikipedia.org/wiki/Gallery_of_flags_of_dependent_territories")
                         .userAgent("Mozilla")
@@ -133,18 +142,18 @@ public class Interface extends Application{
 
             }else{
                 if(otherCountries.containsKey(country)){
-                    flagURL = "https://www.countries-ofthe-world.com/flags-normal/flag-of-" + otherCountries.get(country) + ".png";
+                    flagURL = "http://www.sciencekids.co.nz/images/pictures/flags680/" + otherCountries.get(country) + ".jpg";
                     flag.setImage(new Image(flagURL));
                 }
                 else{
-                    flagURL = "https://www.countries-ofthe-world.com/flags-normal/flag-of-" + country + ".png";
+                    flagURL = "http://www.sciencekids.co.nz/images/pictures/flags680/" + country + ".jpg";
                     flag.setImage(new Image(flagURL));
                 }
             }
 
             //Set the Tooltip to show the correct name of the country.
             if(otherCountries.containsKey(country)){
-                Tooltip t = new Tooltip(otherCountries.get(country).replace("-", " "));
+                Tooltip t = new Tooltip(otherCountries.get(country).replace("_", " "));
                 Tooltip.install(flag, t);
             }
             else{
