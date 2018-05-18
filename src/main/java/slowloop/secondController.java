@@ -39,7 +39,11 @@ public class secondController {
             @Override
             protected Void call() throws Exception {
                 if (event.getCode() == KeyCode.ENTER) {
-                    progress.setVisible(true);
+                    Platform.runLater(new Runnable() {
+                        public void run() {
+                            progress.setVisible(true);
+                        }
+                    });
                     connection = true;
                     Backend backend = new Backend();
 
@@ -69,7 +73,11 @@ public class secondController {
                     }
                     else{
                         loadInfo(boxer);
-                        progress.setVisible(false);
+                        Platform.runLater(new Runnable() {
+                            public void run() {
+                                progress.setVisible(false);
+                            }
+                        });
                     }
                 }
                 return null;
@@ -83,7 +91,11 @@ public class secondController {
         Task task = new Task() {
             @Override
             protected Void call() throws Exception {
-                progress.setVisible(true);
+                Platform.runLater(new Runnable() {
+                    public void run() {
+                        progress.setVisible(true);
+                    }
+                });
                 connection = true;
                 Backend backend = new Backend();
 
@@ -113,7 +125,11 @@ public class secondController {
                 }
                 else{
                     loadInfo(boxer);
-                    progress.setVisible(false);
+                    Platform.runLater(new Runnable() {
+                        public void run() {
+                            progress.setVisible(false);
+                        }
+                    });
                 }
                 return null;
             }
@@ -131,7 +147,11 @@ public class secondController {
                 if (currentOpponent.contains("TBA") || currentOpponent.contains("n/a") || currentOpponent.contains("N/A")) {
                 }
                 else{
-                    progress.setVisible(true);
+                    Platform.runLater(new Runnable() {
+                        public void run() {
+                            progress.setVisible(true);
+                        }
+                    });
                     connection = true;
                     Backend backend = new Backend();
                     backend.connect(currentBoxer);
@@ -159,7 +179,11 @@ public class secondController {
                     }
                     else{
                         loadInfo(backend.opponent);
-                        progress.setVisible(false);
+                        Platform.runLater(new Runnable() {
+                            public void run() {
+                                progress.setVisible(false);
+                            }
+                        });
                     }
                 }
                 return null;
@@ -202,7 +226,11 @@ public class secondController {
     //Load's the info of the first searched boxer. The setText() method in the Interface class grabs the boxer name.
     public void initialize() throws Exception{
 
-        progress.setVisible(false);
+        Platform.runLater(new Runnable() {
+            public void run() {
+                progress.setVisible(false);
+            }
+        });
         boxerName.setText(new Interface().setText());
         loadInfo(boxerName.getText());
         boxerName.clear();
